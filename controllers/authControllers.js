@@ -19,23 +19,26 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  console.log('Login attempt:', req.body);
+  console.log("Login attempt:", req.body);
   const { email, password } = req.body;
   try {
+
     const emailUser = await findUserByEmail(email);
-    console.log('User found:', emailUser);
+    console.log("User found:", emailUser);
     if (!emailUser)
       return res.status(400).json({ msg: "Email não encontrado" });
 
+    // Comparador de senha criptografada
     const isMatch = await bcrypt.compare(password, emailUser.password);
-    console.log('Password match:', isMatch);
+    console.log("Password match:", isMatch);
     if (!isMatch) return res.status(400).json({ msg: "Senha incorreta" });
 
-    const token = jwt.sign({ id: emailUser.id }, process.env.JWT_SECRET, { 
-      // Gera token JWT
+    // Valida se esta funcionando ou não o Token % gera
+    const token = jwt.sign({ id: emailUser.id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    console.log('Token generated:', token.substring(0, 50) + '...');
+
+    console.log("Token generated:", token.substring(0, 50) + "...");
     res.json({
       token,
       user: {
@@ -45,7 +48,7 @@ const login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error("Login error:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -69,30 +72,33 @@ const usersDb = async (req, res) => {
 
 const tokenValidate = async (req, res) => {
   try {
-    console.log('Headers recebidos:', req.headers);
-    console.log('Body recebido:', req.body);
+    console.log("Headers recebidos:", req.headers);
+    console.log("Body recebido:", req.body);
 
     let token;
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-      console.log('Token extraído do header Authorization');
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+      console.log("Token extraído do header Authorization");
     } else if (req.body.token) {
       token = req.body.token;
-      console.log('Token extraído do body');
+      console.log("Token extraído do body");
     } else {
       return res.status(401).json({ error: "Token não fornecido" });
     }
 
-    console.log('Token a validar:', token ? token.substring(0, 50) + '...' : 'Nenhum');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verifica token
-    console.log('Token válido, usuário:', decoded);
+    console.log(
+      "Token a validar:",
+      token ? token.substring(0, 50) + "..." : "Nenhum"
+    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Token válido, usuário:", decoded);
     res.json({ valid: true, user: decoded });
   } catch (err) {
-    console.log('Erro na validação:', err.message);
+    console.log("Erro na validação:", err.message);
     res.status(401).json({ error: "Token inválido", details: err.message });
   }
-}
+};
 
 const coffee = async (req, res) => {
   try {
@@ -107,4 +113,5 @@ const coffee = async (req, res) => {
     });
   }
 };
+
 module.exports = { register, login, usersDb, tokenValidate, coffee };
