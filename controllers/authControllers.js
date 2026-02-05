@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { createUser, findUserByEmail } = require("../models/userModel");
-const router = require("../routes/auth");
 const db = require("../config/db");
 
 const register = async (req, res) => {
@@ -21,8 +20,8 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   console.log("Login attempt:", req.body);
   const { email, password } = req.body;
-  try {
 
+  try {
     const emailUser = await findUserByEmail(email);
     console.log("User found:", emailUser);
     if (!emailUser)
@@ -33,20 +32,21 @@ const login = async (req, res) => {
     console.log("Password match:", isMatch);
     if (!isMatch) return res.status(400).json({ msg: "Senha incorreta" });
 
-    // Valida se esta funcionando ou não o Token % gera
+    // Valida se esta funcionando ou não o Token
     const token = jwt.sign({ id: emailUser.id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "1d",
     });
 
-    console.log("Token generated:", token.substring(0, 50) + "...");
-    res.json({
-      token,
-      user: {
-        id: emailUser.id,
-        username: emailUser.username,
-        email: emailUser.email,
-      },
+    const isProd = process.env.NODE_ENV === "production";
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
     });
+
+    res.json({ sucesso: true });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: err.message });
@@ -61,7 +61,7 @@ const usersDb = async (req, res) => {
         (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
-        }
+        },
       );
     });
     res.json(users);
@@ -71,32 +71,17 @@ const usersDb = async (req, res) => {
 };
 
 const tokenValidate = async (req, res) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({ valid: false, msg: "Sem token" });
+  }
+
   try {
-    console.log("Headers recebidos:", req.headers);
-    console.log("Body recebido:", req.body);
-
-    let token;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-      console.log("Token extraído do header Authorization");
-    } else if (req.body.token) {
-      token = req.body.token;
-      console.log("Token extraído do body");
-    } else {
-      return res.status(401).json({ error: "Token não fornecido" });
-    }
-
-    console.log(
-      "Token a validar:",
-      token ? token.substring(0, 50) + "..." : "Nenhum"
-    );
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Token válido, usuário:", decoded);
-    res.json({ valid: true, user: decoded });
-  } catch (err) {
-    console.log("Erro na validação:", err.message);
-    res.status(401).json({ error: "Token inválido", details: err.message });
+    const user = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ valid: true, user });
+  } catch {
+    res.status(401).json({ valid: false, msg: "Token inválido" });
   }
 };
 
