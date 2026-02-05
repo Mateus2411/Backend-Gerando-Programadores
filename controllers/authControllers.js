@@ -57,7 +57,7 @@ const usersDb = async (req, res) => {
   try {
     const users = await new Promise((resolve, reject) => {
       db.all(
-        "SELECT id, username, email, created_at FROM users",
+        "SELECT id, username, email, password, created_at FROM users",
         (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
