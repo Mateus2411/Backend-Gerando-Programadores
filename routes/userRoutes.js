@@ -18,8 +18,8 @@ router.get("/coffee", coffee);
 
 router.get("/auth/me", auth, (req, res) => {
   res.json({
-    teste: true,
-    msg: "Rota funcionando"
+    logado: true,
+    msg: "Usuário ok"
   });
 });
 
