@@ -8,7 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const app = express();
 
 app.use(cors({
-  origin: "https://gerando-programadores.vercel.app/",
+  origin: "https://gerando-programadores.vercel.app",
   credentials: true,
 }));
 
