@@ -1,8 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { createUser, findUserByEmail } = require("../models/userModel");
+const { createUser, findUserByEmail, updateUserBio, updateName, updatePassword } = require("../models/userModel");
 const db = require("../config/db");
 
+// #region Operações do Usuario
 const register = async (req, res) => {
   const { username, email, password } = req.body;
   try {
@@ -46,30 +47,117 @@ const login = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.json({ sucesso: true });
+    // Retorna os dados do usuário após login bem-sucedido
+    const userData = {
+      sucesso: true,
+      user: {
+        id: emailUser.id,
+        username: emailUser.username,
+        email: emailUser.email,
+        bio: emailUser.bio,
+        created_at: emailUser.created_at,
+      },
+    };
+    console.log("Sending response:", userData);
+    res.json(userData);
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-const usersDb = async (req, res) => {
+const logout = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
+
+  return res.status(200).json({
+    message: "Logout realizado com sucesso",
+    logado: false,
+  });
+};
+
+// Edits: Bio, User Name, senha
+
+const editBio = async (req, res) => {
+  const userId = req.user.id;
+  const { bio } = req.body;
+
+  if (bio === undefined) {
+    return res.status(400).json({ msg: "Bio é obrigatória" });
+  }
+
   try {
-    const users = await new Promise((resolve, reject) => {
-      db.all(
-        "SELECT id, username, email, password, created_at FROM users",
-        (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        },
-      );
-    });
-    res.json(users);
+    await updateUserBio(userId, bio);
+    return res.status(200).json({ msg: "Biografia atualizada com sucesso", bio });
   } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar usuários" });
+    res.status(500).json({ error: err.message });
   }
 };
 
+const editUserName = async (req, res) => {
+  const userId = req.user.id;
+  const { userName } = req.body;
+
+  if (!userName) {
+    return res.status(400).json({ msg: "Username é obrigatório" });
+  }
+
+  try {
+    await updateName(userName, userId);
+    res.status(200).json({ msg: "Nome de usuário alterado com sucesso", username: userName });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const editPassword = async (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ msg: "Senha atual e nova senha são obrigatórias" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ msg: "A nova senha deve ter no mínimo 6 caracteres" });
+  }
+
+  try {
+    // Buscar usuário para verificar senha atual
+    const user = await new Promise((resolve, reject) => {
+      db.get("SELECT * FROM users WHERE id = ?", [userId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(404).json({ msg: "Usuário não encontrado" });
+    }
+
+    // Verificar senha atual
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Senha atual incorreta" });
+    }
+
+    // Hash da nova senha
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Atualizar senha
+    await updatePassword(hashedPassword, userId);
+
+    res.status(200).json({ msg: "Senha alterada com sucesso" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+// #endregion
+
+// #region Token
 const tokenValidate = async (req, res) => {
   const token = req.cookies.token;
 
@@ -85,18 +173,109 @@ const tokenValidate = async (req, res) => {
   }
 };
 
-const coffee = async (req, res) => {
+// #endregion
+
+// #region DB Utilitis
+  
+const usersDb = async (req, res) => {
   try {
-    res.status(418).json({
-      error: "I'm a teapot",
-      mensage: "O servidor se recusa a preparar o café",
+    const users = await new Promise((resolve, reject) => {
+      db.all("SELECT * FROM users", (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
     });
+    
+    const cursos = await new Promise((resolve, reject) => {
+      db.all("SELECT * FROM cursos", (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    res.json({ users, cursos});
   } catch (err) {
-    res.status(418).json({
-      error: "I'm a teapot",
-      mensage: "O servidor se recusa a preparar o café",
-    });
+    res.status(500).json({ error: "Erro ao buscar usuários" });
   }
 };
 
-module.exports = { register, login, usersDb, tokenValidate, coffee };
+const testeUserRelational = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const user = await new Promise((resolve, reject) => {
+      db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(404).json({ msg: "Usuário não encontrado" });
+    }
+
+    const cursos = await new Promise((resolve, reject) => {
+      db.all("SELECT * FROM cursos WHERE user_id = ?", [user.id], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+
+    res.json({
+      ...user,
+      cursos: cursos
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao buscar usuário e cursos" });
+  }
+};
+
+const  getAuthenticatedUser = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const user = await new Promise((resolve, reject) => {
+      db.get("SELECT id, username, email, bio, created_at FROM users WHERE id = ?", [userId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(404).json({ logado: false, msg: "Usuário não encontrado" });
+    }
+
+    const cursos = await new Promise((resolve, reject) => {
+      db.all("SELECT * FROM cursos WHERE user_id = ?", [userId], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+
+    res.json({
+      logado: true,
+      user: {
+        ...user,
+        cursos: cursos
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao buscar dados do usuário" });
+  }
+};
+// #endregion
+
+module.exports = {
+  // User
+  register,
+  login,
+  editBio,
+  editUserName,
+  editPassword,
+  // Token
+  tokenValidate,
+  // Db
+  usersDb,
+  logout,
+  testeUserRelational,
+  getAuthenticatedUser,
+};
