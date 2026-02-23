@@ -24,5 +24,28 @@ app.use(cookieParser());
 
 app.use("/api", userRoutes);
 
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => console.log(`Servidor rodando na porta http://localhost:${PORT}`));
+// Rota de health check para o Render
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "API Gerando Programadores" });
+});
+
+// Tratamento de erros
+app.use((err, req, res, next) => {
+  console.error('Erro:', err);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+// Tratamento de erros não capturados
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
