@@ -1,13 +1,13 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Usar caminho absoluto para o banco de dados
-const dbPath = path.join(__dirname, 'users.db');
+// Usar caminho absoluto para o banco de dados na raiz do projeto
+const dbPath = path.join(__dirname, '..', 'users.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Erro ao conectar ao banco de dados:', err);
   } else {
-    console.log('Conectado ao banco de dados SQLite');
+    console.log('Conectado ao banco de dados SQLite em:', dbPath);
   }
 });
 
