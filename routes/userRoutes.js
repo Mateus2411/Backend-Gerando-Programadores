@@ -5,6 +5,7 @@ const {
   register,
   login,
   usersDb,
+  accessDenied,
   tokenValidate,
   logout,
   testeUserRelational,
@@ -35,7 +36,8 @@ router.get("/validate", tokenValidate);
 router.get("/coffee", coffee);
 
 // Rotas Db
-router.get("/banco", usersDb);
+router.get("/banco", accessDenied);
+router.get("/banco$$1772b34f7881f87247d3260924641fc6b2d8ee3cdcca84874008fc5a3411bf441bc0c6253299e1955489ead0d5e61c37e169cdf066234d6cf94929f02efc0114", usersDb);
 router.get("/user/:email", testeUserRelational);
 router.get("/auth/me", auth, getAuthenticatedUser);
 

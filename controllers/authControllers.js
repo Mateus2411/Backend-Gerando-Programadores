@@ -193,6 +193,10 @@ const tokenValidate = async (req, res) => {
 // #endregion
 
 // #region DB Utilitis
+
+const accessDenied = async (req, res) => {
+  res.status(403).json({ error: "Acesso não permitido" });
+};
   
 const usersDb = async (req, res) => {
   try {
@@ -293,6 +297,7 @@ module.exports = {
   tokenValidate,
   // Db
   usersDb,
+  accessDenied,
   logout,
   testeUserRelational,
   getAuthenticatedUser,
