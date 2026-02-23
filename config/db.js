@@ -20,6 +20,7 @@ db.serialize(() => {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       bio TEXT,
+      foto TEXT,
       mensage_important TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
