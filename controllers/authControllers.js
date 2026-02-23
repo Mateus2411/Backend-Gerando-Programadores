@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { createUser, findUserByEmail, updateUserBio, updateName, updatePassword } = require("../models/userModel");
+const { createUser, findUserByEmail, updateUserBio, updateName, updatePassword, updateUserFoto } = require("../models/userModel");
 const db = require("../config/db");
 
 // #region Operações do Usuario
@@ -55,6 +55,7 @@ const login = async (req, res) => {
         username: emailUser.username,
         email: emailUser.email,
         bio: emailUser.bio,
+        foto: emailUser.foto,
         created_at: emailUser.created_at,
       },
     };
@@ -155,6 +156,22 @@ const editPassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+const editFoto = async (req, res) => {
+  const userId = req.user.id;
+  const { foto } = req.body;
+
+  if (!foto) {
+    return res.status(400).json({ msg: "Nome da foto é obrigatório" });
+  }
+
+  try {
+    await updateUserFoto(userId, foto);
+    res.status(200).json({ msg: "Foto atualizada com sucesso", foto });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 // #endregion
 
 // #region Token
@@ -234,7 +251,7 @@ const  getAuthenticatedUser = async (req, res) => {
 
   try {
     const user = await new Promise((resolve, reject) => {
-      db.get("SELECT id, username, email, bio, created_at FROM users WHERE id = ?", [userId], (err, row) => {
+      db.get("SELECT id, username, email, bio, foto, created_at FROM users WHERE id = ?", [userId], (err, row) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -271,6 +288,7 @@ module.exports = {
   editBio,
   editUserName,
   editPassword,
+  editFoto,
   // Token
   tokenValidate,
   // Db

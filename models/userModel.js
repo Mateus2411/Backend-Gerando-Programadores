@@ -82,6 +82,18 @@ const getUserBio = (userId) => {
     });
   };
 // #endregion
+
+// #region editar foto
+const updateUserFoto = (userId, foto) => {
+  return new Promise((resolve, reject) => {
+    db.run(`UPDATE users SET foto = ? WHERE id = ?`, [foto, userId], (err) => {
+      if (err) return reject(err);
+      resolve({ userId, foto });
+    });
+  });
+};
+// #endregion
+
 module.exports = {
   createUser,
   findUserByEmail,
@@ -89,4 +101,5 @@ module.exports = {
   getUserBio,
   updateName,
   updatePassword,
+  updateUserFoto,
 };

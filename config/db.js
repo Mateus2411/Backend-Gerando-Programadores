@@ -39,6 +39,26 @@ db.serialize(() => {
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migração: adicionar coluna foto se não existir
+  db.all("PRAGMA table_info(users)", (err, columns) => {
+    if (err) {
+      console.error('Erro ao verificar colunas:', err);
+      return;
+    }
+    
+    const hasFoto = columns.some(col => col.name === 'foto');
+    
+    if (!hasFoto) {
+      db.run(`ALTER TABLE users ADD COLUMN foto TEXT`, (err) => {
+        if (err) {
+          console.error('Erro ao adicionar coluna foto:', err);
+        } else {
+          console.log('Coluna foto adicionada com sucesso!');
+        }
+      });
+    }
+  });
 });
 
 module.exports = db;

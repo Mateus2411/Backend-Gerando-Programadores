@@ -12,6 +12,7 @@ const {
   editBio,
   editUserName,
   editPassword,
+  editFoto,
 } = require("../controllers/authControllers");
 
 const {
@@ -42,6 +43,7 @@ router.get("/auth/me", auth, getAuthenticatedUser);
 router.put("/auth/bio", auth, editBio);
 router.put("/auth/username", auth, editUserName);
 router.put("/auth/password", auth, editPassword);
+router.put("/auth/foto", auth, editFoto);
 
 // Rotas de cursos
 router.post("/auth/create-cursos", auth, crateNewCurso);
