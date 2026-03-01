@@ -4,9 +4,14 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
+const { generalLimiter } = require("./controllers/rateController");
 
 const app = express();
 
+// Rate limiting global
+app.use(generalLimiter);
+
+// CORS
 app.use(cors({
   origin: "https://gerando-programadores.vercel.app",
   credentials: true,
@@ -17,14 +22,14 @@ app.use(cors({
 //   credentials: true,
 // }));
 
+// Middlewares
 app.use(express.json());
-
-// 🔴 habilita leitura de cookies
 app.use(cookieParser());
 
+// Rotas
 app.use("/api", userRoutes);
 
-// Rota de health check para o Render
+// Health check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "API Gerando Programadores" });
 });
@@ -35,8 +40,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
+// Inicialização do servidor
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
