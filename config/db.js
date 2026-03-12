@@ -29,8 +29,10 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS cursos (
       id_curso INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome_curso TEXT UNIQUE NOT NULL,
+      nome_curso TEXT NOT NULL,
       descricao TEXT NOT NULL,
+      grau TEXT NOT NULL,
+      imagem TEXT,
       user_id INTEGER NOT NULL,
       progress TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -39,6 +41,37 @@ db.serialize(() => {
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Migração: adicionar colunas grau e imagem se não existirem
+  db.all("PRAGMA table_info(cursos)", (err, columns) => {
+    if (err) {
+      console.error('Erro ao verificar colunas de cursos:', err);
+      return;
+    }
+    
+    const hasGrau = columns.some(col => col.name === 'grau');
+    const hasImagem = columns.some(col => col.name === 'imagem');
+    
+    if (!hasGrau) {
+      db.run(`ALTER TABLE cursos ADD COLUMN grau TEXT`, (err) => {
+        if (err) {
+          console.error('Erro ao adicionar coluna grau:', err);
+        } else {
+          console.log('Coluna grau adicionada com sucesso!');
+        }
+      });
+    }
+    
+    if (!hasImagem) {
+      db.run(`ALTER TABLE cursos ADD COLUMN imagem TEXT`, (err) => {
+        if (err) {
+          console.error('Erro ao adicionar coluna imagem:', err);
+        } else {
+          console.log('Coluna imagem adicionada com sucesso!');
+        }
+      });
+    }
+  });
 
   // Migração: adicionar coluna foto se não existir
   db.all("PRAGMA table_info(users)", (err, columns) => {
