@@ -42,6 +42,22 @@ db.serialize(() => {
     )
   `);
 
+  // Tabela de progresso do aluno nos cursos
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_courses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      curso_id INTEGER NOT NULL,
+      enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      progress_percent INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'enrolled',
+      UNIQUE(user_id, curso_id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(curso_id) REFERENCES cursos(id_curso) ON DELETE CASCADE
+    )
+  `);
+
   // Migração: adicionar colunas grau e imagem se não existirem
   db.all("PRAGMA table_info(cursos)", (err, columns) => {
     if (err) {

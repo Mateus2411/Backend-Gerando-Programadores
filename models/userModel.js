@@ -7,7 +7,7 @@ const createUser = (username, email, password) => {
     db.run(
       `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
       [username, email, password],
-      (err) => {
+      function(err) {
         if (err) return reject(err);
         resolve({ id: this.lastID, username, email });
       },

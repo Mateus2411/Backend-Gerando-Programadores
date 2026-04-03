@@ -24,6 +24,15 @@ const {
   listarCursosDoUsuario,
 } = require("../controllers/cursoControler");
 
+const {
+  enrollCourse,
+  getProgress,
+  updateProgress,
+  listMyCourses,
+  cancelCourse,
+  listCompletedCourses,
+} = require("../controllers/userCoursesController");
+
 const { coffee } = require("../controllers/coffeeError");
 
 // Middlewares
@@ -52,15 +61,29 @@ router.delete("/auth/delete-cursos", auth, deletarCurso);
 router.get("/auth/list-cursos", listarCursos);
 router.get("/cursos/meus", auth, listarCursosDoUsuario);
 
-// Rotas de administração (protegidas com hash)
-router.get("/banco", accessDenied);
-router.get(
-  "/banco$1772b34f7881f87247d3260924641fc6b2d8ee3cdcca84874008fc5a3411bf441bc0c6253299e1955489ead0d5e61c37e169cdf066234d6cf94929f02efc0114",
-  usersDb,
-);
-router.get(
-  "/user$1772b34f7881f87247d3260924641fc6b2d8ee3cdcca84874008fc5a3411bf441bc0c6253299e1955489ead0d5e61c37e169cdf066234d6cf94929f02efc0114/:email",
-  testeUserRelational,
-);
+// Rotas de progresso do curso
+router.post("/auth/cursos/enroll", auth, enrollCourse);
+router.get("/auth/cursos/:curso_id/progress", auth, getProgress);
+router.put("/auth/cursos/progress", auth, updateProgress);
+router.get("/auth/cursos/my-courses", auth, listMyCourses);
+router.delete("/auth/cursos/cancel", auth, cancelCourse);
+router.get("/auth/cursos/completed", auth, listCompletedCourses);
+
+// Rotas de administração (protegidas com hash via query param)
+router.get("/admin/db", (req, res) => {
+  const { key } = req.query;
+  if (key !== `${process.env.KEY_PROSSES}`) {
+    return accessDenied(req, res);
+  }
+  usersDb(req, res);
+});
+
+router.get("/admin/user/:email", (req, res) => {
+  const { key } = req.query;
+  if (key !== `${process.env.KEY_PROSSES}`) {
+    return accessDenied(req, res);
+  }
+  testeUserRelational(req, res);
+});
 
 module.exports = router;
