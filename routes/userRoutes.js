@@ -44,6 +44,9 @@ router.post("/register", authLimiter, register);
 router.post("/login", authLimiter, login);
 router.get("/validate", tokenValidate);
 router.get("/coffee", coffee);
+router.get("/ping", (req, res) => {
+  res.send("ok");
+});
 
 // Rotas de autenticação
 router.post("/auth/logout", auth, logout);
